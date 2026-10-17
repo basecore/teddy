@@ -692,7 +692,7 @@ namespace TeddyBench
         {
             if (uid != null)
             {
-                return BitConverter.ToString(uid.Reverse().ToArray()).Replace("-", "");
+                return BitConverter.ToString(Enumerable.Reverse(uid).ToArray()).Replace("-", "");
             }
             return null;
         }
@@ -811,7 +811,7 @@ namespace TeddyBench
                 byte[] uidBytes = new byte[8];
                 Array.Copy(data, 2, uidBytes, 0, 8);
 
-                string uid = BitConverter.ToString(uidBytes.Reverse().ToArray()).Replace("-", "");
+                string uid = BitConverter.ToString(Enumerable.Reverse(uidBytes).ToArray()).Replace("-", "");
                 LogWindow.Log(LogWindow.eLogLevel.Debug, "[PM3] GetUID: ACK, returning " + uid.Length + " byte");
                 return uidBytes;
             }
@@ -1465,7 +1465,7 @@ namespace TeddyBench
 
             byte[] data = new byte[8 + 8 * 4];
 
-            Array.Copy(uid.Reverse().ToArray(), data, 8);
+            Array.Copy(Enumerable.Reverse(uid).ToArray(), data, 8);
             Array.Copy(mem, 0, data, 8, 8 * 4);
 
             return data;
