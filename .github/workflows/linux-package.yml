@@ -1,0 +1,32 @@
+name: Package TeddyBench Linux desktop installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [linux-1.7.0]
+    paths:
+      - "packaging/**"
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare package layout
+        run: |
+          mkdir -p package/TeddyBench-Linux
+          cp -a packaging/. package/TeddyBench-Linux/
+          cp TeddyBench/dog.ico package/TeddyBench-Linux/dog.ico
+
+      - name: Create package archive
+        run: |
+          cd package
+          zip -r ../TeddyBench-Linux-1.7.0-package.zip TeddyBench-Linux
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TeddyBench-Linux-1.7.0-package
+          path: TeddyBench-Linux-1.7.0-package.zip
+          if-no-files-found: error

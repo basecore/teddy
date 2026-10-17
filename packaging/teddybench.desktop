@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TeddyBench
+GenericName=Toniebox Audio Manager
+Comment=Unofficial Linux version of TeddyBench
+Exec=/opt/teddybench/TeddyBench
+TryExec=/opt/teddybench/TeddyBench
+Icon=/opt/teddybench/teddybench.png
+Terminal=false
+Categories=AudioVideo;Audio;Utility;
+StartupNotify=true
