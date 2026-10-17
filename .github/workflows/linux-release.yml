@@ -9,43 +9,43 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-      with:
-        ref: linux-1.7.0
-
-      - name: Install GitHub CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gh
-
-      - name: Download tested TeddyBench Linux binary
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p download
-          gh release download v1.7.0-linux.1 --repo "$GITHUB_REPOSITORY" --pattern 'TeddyBench-Linux-1.7.0-linux.1.tar.xz' --dir download
-
-      - name: Prepare complete Linux package
-        run: |
-          mkdir -p package/TeddyBench-Linux
-          tar -xf download/TeddyBench-Linux-1.7.0-linux.1.tar.xz -C package/TeddyBench-Linux --strip-components=1
-          cp packaging/install-linux.sh package/TeddyBench-Linux/
-          cp packaging/uninstall-linux.sh package/TeddyBench-Linux/
-          cp packaging/teddybench.desktop package/TeddyBench-Linux/
-          cp packaging/README.md package/TeddyBench-Linux/
-          cp TeddyBench/dog.ico package/TeddyBench-Linux/dog.ico
-          chmod +x package/TeddyBench-Linux/TeddyBench
-          chmod +x package/TeddyBench-Linux/install-linux.sh
-          chmod +x package/TeddyBench-Linux/uninstall-linux.sh
-
-      - name: Create release archive
-        run: |
-          cd package
-          zip -r ../TeddyBench-Linux-1.7.0-linux.2.zip TeddyBench-Linux
-
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create v1.7.0-linux.2 --repo "$GITHUB_REPOSITORY" --target linux-1.7.0 --title "TeddyBench 1.7.0 Linux 2" --notes "Unofficial TeddyBench Linux release with desktop installation support." TeddyBench-Linux-1.7.0-linux.2.zip
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: linux-1.7.0
+  
+        - name: Install GitHub CLI
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y gh
+  
+        - name: Download tested TeddyBench Linux binary
+          env:
+            GH_TOKEN: ${{ github.token }}
+          run: |
+            mkdir -p download
+            gh release download v1.7.0-linux.1 --repo "$GITHUB_REPOSITORY" --pattern 'TeddyBench-Linux-1.7.0-linux.1.tar.xz' --dir download
+  
+        - name: Prepare complete Linux package
+          run: |
+            mkdir -p package/TeddyBench-Linux
+            tar -xf download/TeddyBench-Linux-1.7.0-linux.1.tar.xz -C package/TeddyBench-Linux --strip-components=1
+            cp packaging/install-linux.sh package/TeddyBench-Linux/
+            cp packaging/uninstall-linux.sh package/TeddyBench-Linux/
+            cp packaging/teddybench.desktop package/TeddyBench-Linux/
+            cp packaging/README.md package/TeddyBench-Linux/
+            cp TeddyBench/dog.ico package/TeddyBench-Linux/dog.ico
+            chmod +x package/TeddyBench-Linux/TeddyBench
+            chmod +x package/TeddyBench-Linux/install-linux.sh
+            chmod +x package/TeddyBench-Linux/uninstall-linux.sh
+  
+        - name: Create release archive
+          run: |
+            cd package
+            zip -r ../TeddyBench-Linux-1.7.0-linux.2.zip TeddyBench-Linux
+  
+        - name: Create GitHub release
+          env:
+            GH_TOKEN: ${{ github.token }}
+          run: |
+            gh release create v1.7.0-linux.2 --repo "$GITHUB_REPOSITORY" --target linux-1.7.0 --title "TeddyBench 1.7.0 Linux 2" --notes "Unofficial TeddyBench Linux release with desktop installation support." TeddyBench-Linux-1.7.0-linux.2.zip
