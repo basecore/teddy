@@ -9,6 +9,7 @@
     <ApplicationIcon>dog.ico</ApplicationIcon>
     <DebugType>embedded</DebugType>
     <LangVersion>latest</LangVersion>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -26,7 +27,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.IO.Ports" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
@@ -53,6 +53,8 @@
     <PackageReference Include="Octokit" Version="0.50.0" />
     <PackageReference Include="ScottPlot" Version="4.1.28" />
     <PackageReference Include="Semver" Version="2.0.6" />
+    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
+    <PackageReference Include="System.Resources.Extensions" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
