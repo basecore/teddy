@@ -9,8 +9,10 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: linux-1.7.0
 
       - name: Install GitHub CLI
         run: |
