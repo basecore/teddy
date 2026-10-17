@@ -1,0 +1,40 @@
+name: Build TeddyBench for Linux
+
+on:
+  push:
+    branches:
+      - linux-1.7.0
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Mono and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mono-complete msbuild libgdiplus ffmpeg
+
+      - name: Restore NuGet packages
+        run: msbuild Teddy.sln -t:Restore -p:Configuration=Release
+
+      - name: Build TeddyBench
+        run: msbuild Teddy.sln -p:Configuration=Release -p:Platform="Any CPU"
+
+      - name: Prepare Linux package
+        run: |
+          mkdir -p dist/TeddyBench-Linux
+          find . -type f \( -name 'TeddyBench.exe' -o -name '*.dll' -o -name '*.config' -o -name '*.resx' \) -path '*Release*' -exec cp {} dist/TeddyBench-Linux/ \;
+          cp Linux/TeddyBench dist/TeddyBench-Linux/
+          chmod +x dist/TeddyBench-Linux/TeddyBench
+          tar -cJf TeddyBench-Linux-1.7.0.tar.xz -C dist TeddyBench-Linux
+
+      - name: Upload Linux build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TeddyBench-Linux-1.7.0
+          path: TeddyBench-Linux-1.7.0.tar.xz

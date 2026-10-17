@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Check for Mono
+if ! command -v mono >/dev/null 2>&1; then
+    echo "mono wurde nicht gefunden."
+    echo "Installation unter Linux Mint:"
+    echo "  sudo apt update && sudo apt install -y mono-complete libgdiplus"
+    exit 1
+fi
+
+# Check for FFmpeg
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "ffmpeg wurde nicht gefunden."
+    echo "Installation unter Linux Mint:"
+    echo "  sudo apt update && sudo apt install -y ffmpeg"
+    exit 1
+fi
+
+# Avoid known Mono/Linux GUI issues
+export MONO_MANAGED_WATCHER=disabled
+export MONO_WINFORMS_XIM_STYLE=disabled
+
+# Start TeddyBench from the directory containing this script
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+exec mono TeddyBench.exe
