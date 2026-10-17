@@ -24,7 +24,7 @@ jobs:
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgdiplus ffmpeg
+          sudo apt-get install -y libgdiplus ffmpeg xz-utils
 
       - name: Restore solution
         run: dotnet restore Teddy.sln
@@ -32,14 +32,37 @@ jobs:
       - name: Build solution
         run: dotnet build Teddy.sln -c Release -p:Platform="Any CPU" --no-restore
 
+      - name: Collect Linux runtime files
+        run: |
+          mkdir -p dist/TeddyBench-Linux
+          find TeddyBench/bin/Release/net48 -maxdepth 1 -type f \
+            \( -name 'TeddyBench.exe' \
+            -o -name '*.dll' \
+            -o -name '*.config' \
+            -o -name '*.exe.config' \) \
+            -exec cp {} dist/TeddyBench-Linux/ \;
+          cp Linux/TeddyBench dist/TeddyBench-Linux/
+          chmod +x dist/TeddyBench-Linux/TeddyBench
+
+      - name: Create Linux archive
+        run: |
+          tar -cJf TeddyBench-Linux-1.7.0.tar.xz -C dist TeddyBench-Linux
+          ls -lh TeddyBench-Linux-1.7.0.tar.xz
+
+      - name: Upload Linux package
+        uses: actions/upload-artifact@v4
+        with:
+          name: TeddyBench-Linux-1.7.0
+          path: TeddyBench-Linux-1.7.0.tar.xz
+
       - name: Collect build output
-        if: always()
+        if: failure()
         run: |
           mkdir -p build-log
           find . -type f \( -name '*.log' -o -name '*.binlog' \) -exec cp {} build-log/ \; || true
 
       - name: Upload build logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: teddybench-linux-build-logs
