@@ -4,13 +4,27 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: teddybench-linux-installer-release
+  cancel-in-progress: false
 
 jobs:
-  package:
+  release:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: v1.7.0-linux.2
+      ARCHIVE: TeddyBench-Linux-1.7.0-linux.2.zip
     steps:
-      - name: Check out Linux branch
+      - uses: actions/checkout@v4
+
+      - name: Save installation documentation
+        run: cp README.md "$RUNNER_TEMP/INSTALL.md"
+
+      - name: Check out Linux application packaging
         uses: actions/checkout@v4
         with:
           ref: linux-1.7.0
@@ -18,49 +32,42 @@ jobs:
       - name: Install packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y imagemagick zip
+          sudo apt-get install -y imagemagick zip desktop-file-utils
 
-      - name: Download existing Linux application
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Download tested application
         run: |
           set -euo pipefail
           mkdir -p download
-          gh release download v1.7.0-linux.1 --repo "$GITHUB_REPOSITORY" --pattern 'TeddyBench-Linux-1.7.0-linux.1.tar.xz' --dir download
+          gh release download v1.7.0-linux.1 --repo "$GITHUB_REPOSITORY" --pattern 'TeddyBench-Linux-1.7.0-linux.1.tar.xz*' --dir download
+          cd download
+          sha256sum -c TeddyBench-Linux-1.7.0-linux.1.tar.xz.sha256
 
-      - name: Prepare installer test package
+      - name: Prepare complete installer package
         run: |
           set -euo pipefail
-          test -f packaging/install-linux.sh
-          test -f packaging/uninstall-linux.sh
-          test -f packaging/teddybench.desktop
-          test -f TeddyBench/dog.ico
           mkdir -p package/TeddyBench-Linux
           tar -xf download/TeddyBench-Linux-1.7.0-linux.1.tar.xz -C package/TeddyBench-Linux --strip-components=1
           test -s package/TeddyBench-Linux/TeddyBench
           test -s package/TeddyBench-Linux/TeddyBench.exe
-          cp packaging/install-linux.sh packaging/uninstall-linux.sh packaging/teddybench.desktop packaging/README.md package/TeddyBench-Linux/
+          cp packaging/install-linux.sh packaging/uninstall-linux.sh packaging/teddybench.desktop package/TeddyBench-Linux/
+          cp "$RUNNER_TEMP/INSTALL.md" package/TeddyBench-Linux/README.md
           cp TeddyBench/dog.ico package/TeddyBench-Linux/
           convert 'TeddyBench/dog.ico[0]' package/TeddyBench-Linux/teddybench.png
           test -s package/TeddyBench-Linux/teddybench.png
           chmod +x package/TeddyBench-Linux/TeddyBench package/TeddyBench-Linux/install-linux.sh package/TeddyBench-Linux/uninstall-linux.sh
           bash -n package/TeddyBench-Linux/install-linux.sh
           bash -n package/TeddyBench-Linux/uninstall-linux.sh
-          printf '\nInstaller test only. Application binary reused from v1.7.0-linux.1; later UI commits are not included. Install from the extracted download directory, never from /opt/teddybench itself.\n' >> package/TeddyBench-Linux/README.md
+          desktop-file-validate package/TeddyBench-Linux/teddybench.desktop
 
-      - name: Archive test package
+      - name: Archive and checksum
         run: |
           set -euo pipefail
           cd package
-          zip -r ../TeddyBench-Linux-installer-test.zip TeddyBench-Linux
+          zip -r "../$ARCHIVE" TeddyBench-Linux
           cd ..
-          sha256sum TeddyBench-Linux-installer-test.zip > TeddyBench-Linux-installer-test.zip.sha256
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
 
-      - name: Upload test artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: TeddyBench-Linux-installer-test
-          path: |
-            TeddyBench-Linux-installer-test.zip
-            TeddyBench-Linux-installer-test.zip.sha256
-          if-no-files-found: error
+      - name: Publish installer release
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --repo "$GITHUB_REPOSITORY" --target "$(git rev-parse HEAD)" --title "TeddyBench 1.7.0 Linux 2 - desktop installer" --notes-file "$RUNNER_TEMP/INSTALL.md"
