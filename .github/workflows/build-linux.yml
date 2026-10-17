@@ -16,27 +16,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Mono and Linux dependencies
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            mono-complete \
-            mono-devel \
-            mono-xbuild \
-            libgdiplus \
-            ffmpeg \
-            git
+          sudo apt-get install -y libgdiplus ffmpeg
 
-      - name: Show tool versions
-        run: |
-          mono --version
-          xbuild -version || true
+      - name: Restore solution
+        run: dotnet restore Teddy.sln
 
-      - name: Build with Mono xbuild
-        run: |
-          xbuild Teddy.sln \
-            /p:Configuration=Release \
-            /p:Platform="Any CPU"
+      - name: Build solution
+        run: dotnet build Teddy.sln -c Release -p:Platform="Any CPU" --no-restore
 
       - name: Collect build output
         if: always()
