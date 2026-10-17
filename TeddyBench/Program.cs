@@ -1,7 +1,5 @@
-﻿using System;
-using System.Text;
+using System;
 using System.Windows.Forms;
-using static TeddyBench.TeddyMain;
 
 namespace TeddyBench
 {
@@ -9,20 +7,17 @@ namespace TeddyBench
     {
         public static TeddyMain MainClass;
 
-        /// <summary>
-        /// Der Haupteinstiegspunkt für die Anwendung.
-        /// </summary>
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += Application_ThreadException;
-            
 
             MainClass = new TeddyMain();
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+                MainClass.Shown += delegate { MainClass.ApplyLinuxUi(); };
             Application.Run(MainClass);
         }
 
