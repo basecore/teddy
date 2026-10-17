@@ -13,28 +13,43 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Install Mono and build tools
+      - name: Install Mono and Linux dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y mono-complete msbuild libgdiplus ffmpeg
+          sudo apt-get install -y \
+            mono-complete \
+            mono-devel \
+            mono-xbuild \
+            mono-msbuild \
+            libgdiplus \
+            ffmpeg \
+            git
 
-      - name: Restore NuGet packages
-        run: msbuild Teddy.sln -t:Restore -p:Configuration=Release
-
-      - name: Build TeddyBench
-        run: msbuild Teddy.sln -p:Configuration=Release -p:Platform="Any CPU"
-
-      - name: Prepare Linux package
+      - name: Show tool versions
         run: |
-          mkdir -p dist/TeddyBench-Linux
-          find . -type f \( -name 'TeddyBench.exe' -o -name '*.dll' -o -name '*.config' -o -name '*.resx' \) -path '*Release*' -exec cp {} dist/TeddyBench-Linux/ \;
-          cp Linux/TeddyBench dist/TeddyBench-Linux/
-          chmod +x dist/TeddyBench-Linux/TeddyBench
-          tar -cJf TeddyBench-Linux-1.7.0.tar.xz -C dist TeddyBench-Linux
+          mono --version
+          msbuild -version || true
+          xbuild -version || true
 
-      - name: Upload Linux build artifact
+      - name: Build with Mono MSBuild
+        run: |
+          msbuild Teddy.sln \
+            -p:Configuration=Release \
+            -p:Platform="Any CPU" \
+            -restore
+
+      - name: Collect build output
+        if: always()
+        run: |
+          mkdir -p build-log
+          find . -type f \( -name '*.log' -o -name '*.binlog' \) -exec cp {} build-log/ \; || true
+
+      - name: Upload build logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: TeddyBench-Linux-1.7.0
-          path: TeddyBench-Linux-1.7.0.tar.xz
+          name: teddybench-linux-build-logs
+          path: build-log/
