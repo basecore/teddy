@@ -23,7 +23,6 @@ jobs:
             mono-complete \
             mono-devel \
             mono-xbuild \
-            mono-msbuild \
             libgdiplus \
             ffmpeg \
             git
@@ -31,15 +30,13 @@ jobs:
       - name: Show tool versions
         run: |
           mono --version
-          msbuild -version || true
           xbuild -version || true
 
-      - name: Build with Mono MSBuild
+      - name: Build with Mono xbuild
         run: |
-          msbuild Teddy.sln \
-            -p:Configuration=Release \
-            -p:Platform="Any CPU" \
-            -restore
+          xbuild Teddy.sln \
+            /p:Configuration=Release \
+            /p:Platform="Any CPU"
 
       - name: Collect build output
         if: always()
