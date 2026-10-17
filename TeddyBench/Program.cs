@@ -17,7 +17,7 @@ namespace TeddyBench
 
             MainClass = new TeddyMain();
             if (Environment.OSVersion.Platform == PlatformID.Unix)
-                MainClass.Shown += delegate { MainClass.ApplyLinuxUi(); };
+                MainClass.Shown += delegate { MainClass.ApplyLinuxUi(); MainClass.ConfigureLinuxPlayback(); };
             Application.Run(MainClass);
         }
 
