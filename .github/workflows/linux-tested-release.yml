@@ -1,0 +1,107 @@
+name: Release tested TeddyBench Linux build
+on:
+  push:
+    branches: [master]
+    paths: [.github/workflows/linux-tested-release.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: teddybench-linux-release-3
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.repository == 'basecore/teddy' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_COMMIT: ac86aa22bde24e9f363fe8c44fbdd9ca54ac3336
+      TAG: v1.7.0-linux.3
+      ARCHIVE: TeddyBench-Linux-1.7.0-linux.3.zip
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ac86aa22bde24e9f363fe8c44fbdd9ca54ac3336
+      - name: Refuse to overwrite existing release or tag
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" > "$RUNNER_TEMP/releases.json"
+          python3 -c 'import json,os,sys; sys.exit("Release already exists") if any(r["tag_name"] == os.environ["TAG"] for r in json.load(open(sys.argv[1]))) else None' "$RUNNER_TEMP/releases.json"
+          test -z "$(git ls-remote --tags origin "refs/tags/$TAG")"
+      - name: Download successful artifact for tested commit
+        run: |
+          set -euo pipefail
+          RUN_ID=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build-linux.yml --branch linux-1.7.0 --commit "$SOURCE_COMMIT" --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          test -n "$RUN_ID"
+          test "$RUN_ID" != null
+          mkdir -p download package
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name TeddyBench-Linux-1.7.0 --dir download
+          tar -xf download/TeddyBench-Linux-1.7.0.tar.xz -C package
+          test -s package/TeddyBench-Linux/TeddyBench.exe
+          grep -aFq ConfigureLinuxPlaybackButton package/TeddyBench-Linux/TeddyBench.exe
+          sha256sum package/TeddyBench-Linux/TeddyBench.exe > "$RUNNER_TEMP/exe.sha256"
+          printf 'Source commit: %s\nBuild run: https://github.com/%s/actions/runs/%s\n' "$SOURCE_COMMIT" "$GITHUB_REPOSITORY" "$RUN_ID" > package/TeddyBench-Linux/BUILD-INFO.txt
+          cat "$RUNNER_TEMP/exe.sha256" >> package/TeddyBench-Linux/BUILD-INFO.txt
+      - name: Prepare installer and original icon
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y imagemagick zip desktop-file-utils
+          cp packaging/install-linux.sh packaging/uninstall-linux.sh packaging/teddybench.desktop package/TeddyBench-Linux/
+          cp TeddyBench/dog.ico package/TeddyBench-Linux/
+          convert 'TeddyBench/dog.ico[0]' package/TeddyBench-Linux/teddybench.png
+          test -s package/TeddyBench-Linux/teddybench.png
+          chmod +x package/TeddyBench-Linux/TeddyBench package/TeddyBench-Linux/install-linux.sh package/TeddyBench-Linux/uninstall-linux.sh
+          bash -n package/TeddyBench-Linux/install-linux.sh
+          bash -n package/TeddyBench-Linux/uninstall-linux.sh
+          desktop-file-validate package/TeddyBench-Linux/teddybench.desktop
+          sha256sum -c "$RUNNER_TEMP/exe.sha256"
+      - name: Write release installation instructions
+        run: |
+          cat > "$RUNNER_TEMP/NOTES.md" <<'EOF'
+          # TeddyBench 1.7.0 Linux 3
+
+          Unofficial Linux fork maintained by basecore with AI assistance. Original credits and licenses remain applicable.
+
+          Uses the existing successful build artifact of commit ac86aa22bde24e9f363fe8c44fbdd9ca54ac3336, without recompiling the application. BUILD-INFO.txt records its source run and EXE checksum.
+
+          Maintainer-tested on Linux Mint: audio playback, visible Play/Stop text including after stop and minimize/restore, and original Enter tag UID double-click behavior. This does not certify every file or hardware function.
+
+          Playback uses the existing Opus decoder and ffplay instead of Windows WaveOut. Seeking and accurate playback-time display are not supported by this initial Linux backend.
+
+          ## Requirements
+          Compatible Mono runtime, libgdiplus and FFmpeg including ffplay. No .NET SDK or ImageMagick installation is needed for users of this package. The installer does not install missing dependencies.
+
+          ## Install
+          Download the ZIP and matching .sha256 release assets, not the source-code archives. In their download directory, verify first:
+
+          ```bash
+          sha256sum -c TeddyBench-Linux-1.7.0-linux.3.zip.sha256
+          ```
+
+          Only if verification reports OK, extract into a fresh directory:
+
+          ```bash
+          TESTDIR=$(mktemp -d "$HOME/Downloads/teddybench-linux3.XXXXXX")
+          unzip TeddyBench-Linux-1.7.0-linux.3.zip -d "$TESTDIR"
+          cd "$TESTDIR/TeddyBench-Linux"
+          sudo bash ./install-linux.sh
+          ```
+
+          Close TeddyBench before installing. Run the installer from the extracted folder, never from /opt/teddybench itself. It replaces the application under /opt/teddybench and installs its menu entry and original icon. Start TeddyBench from the Mint menu as your normal user, not with sudo.
+
+          ## Uninstall
+          ```bash
+          sudo bash /opt/teddybench/uninstall-linux.sh
+          ```
+
+          A direct release ZIP requires one extraction; Actions artifact downloads may add an outer ZIP. SHA-256 checks consistency, not an independent signature.
+          EOF
+          cp "$RUNNER_TEMP/NOTES.md" package/TeddyBench-Linux/README.md
+      - name: Archive and publish tested build
+        run: |
+          set -euo pipefail
+          (cd package && zip -r "../$ARCHIVE" TeddyBench-Linux)
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+          gh release create "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" --repo "$GITHUB_REPOSITORY" --target "$SOURCE_COMMIT" --title 'TeddyBench 1.7.0 Linux 3 - playback and installer' --notes-file "$RUNNER_TEMP/NOTES.md"
