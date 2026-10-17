@@ -1,60 +1,87 @@
-# Tonie file tool
+# TeddyBench for Linux
 
-With this tool you can dump existing files of the famous audio box or create custom ones.
+Inoffizieller Linux-Fork von TeddyBench, gepflegt von basecore mit KI-Unterstützung. Ziel ist eine zuverlässige Linux-Version mit der vertrauten TeddyBench-Oberfläche, nicht eine zweite Anwendung mit anderem Bedienkonzept.
 
-## TeddyBench for Linux - unofficial fork
+Das ursprüngliche Projekt enthält Werkzeuge zum Auslesen bestehender Tonie-Dateien und zum Erstellen eigener Dateien. Nicht alle ursprünglichen Funktionen sind bereits unter Linux getestet. Hinweise auf ursprüngliche Autoren und bestehende Lizenzbedingungen bleiben gültig; dieser Fork ist kein offizielles Upstream-Release.
 
-Maintained by basecore with AI assistance. Original author credits and license notices remain applicable. The maintained Linux source branch is `linux-1.7.0`.
+## Aktueller Linux-Stand
 
-### Installer release v1.7.0-linux.2
+- Linux-Quellcode: Branch `linux-1.7.0`.
+- Installer-Version: `v1.7.0-linux.3`.
+- Getesteter Anwendungscommit: `ac86aa22bde24e9f363fe8c44fbdd9ca54ac3336`.
+- Oberfläche: weiterhin Windows Forms auf Mono mit libgdiplus, keine vollständig native GTK-/Qt-Anwendung.
+- Linux-Wiedergabe: vorhandener Opus-Decoder mit PCM-Ausgabe an ffplay statt Windows-WaveOut/winmm.dll.
 
-Download `TeddyBench-Linux-1.7.0-linux.2.zip` and its `.sha256` file from:
+Der Linux-3-Releaseworkflow übernimmt das vorhandene erfolgreiche Build-Artifact dieses Commits, ohne die Anwendung neu zu kompilieren. BUILD-INFO.txt im Paket nennt Quellcommit, Build-Lauf und EXE-Prüfsumme.
 
-https://github.com/basecore/teddy/releases/tag/v1.7.0-linux.2
+Download: https://github.com/basecore/teddy/releases/tag/v1.7.0-linux.3
 
-Use the release asset, not GitHub's automatically generated source-code archives. The release is available after the release workflow completes successfully.
+Die Dateien stehen erst nach erfolgreichem Abschluss des Releaseworkflows zur Verfügung. Die frühere Installer-Version linux.2 verwendet noch die alte linux.1-Binärdatei und enthält die neuen Wiedergabefixes nicht.
 
-This installer release reuses the application binary from `v1.7.0-linux.1`; subsequent UI source commits are not included. The installer was successfully tested by the maintainer on Linux Mint. This does not certify every application or hardware function.
+## Tests und Grenzen
 
-### Install
+Auf dem Linux-Mint-System des Maintainers bestätigt:
 
-Download both files to Downloads. Extract to a fresh folder:
+- Installation mit `sudo bash ./install-linux.sh`, Menüeintrag und Symbol beim vorherigen Installer-Test.
+- CONTENT-Browsing und OGG-Export in bisherigen Tests.
+- Wiedergabe im Testbuild ac86aa2.
+- Sichtbare Play-/Stop-Beschriftung, auch nach Stoppen sowie Minimieren/Wiederherstellen.
+- Doppelklick öffnet wieder den ursprünglichen Dialog "Enter tag UID".
+
+Dies ist keine Zertifizierung aller Audiodateien, Schreib- oder Hardwarefunktionen. Das fertig paketierte Linux-3-Release benötigt zusätzlich einen Installationstest.
+
+Bekannte Einschränkungen:
+
+- Positionssuche und genaue Wiedergabezeitanzeige sind im ersten Linux-Audiobackend nicht implementiert.
+- Teile der Oberfläche sind optisch uneinheitlich; Mono-Rendering benötigt Workarounds.
+- NAudio und weitere Windows-orientierte Komponenten sind noch im Repository vorhanden. Nur die neue Linux-Wiedergabe umgeht WaveOut; eine vollständige Ablösung ist nicht abgeschlossen.
+- NFC, Firmware-/Bootloader-Aktionen und weitere Hardwarefunktionen sind nicht umfassend unter Linux getestet.
+- Ogg-Analysewarnungen können bei einzelnen Dateien auftreten und müssen separat untersucht werden.
+
+## Voraussetzungen unter Linux Mint
+
+Für das fertige Paket werden Mono, libgdiplus und FFmpeg einschließlich ffplay benötigt. Der Installer installiert diese Abhängigkeiten nicht automatisch. Kein .NET-SDK und kein ImageMagick sind zum Verwenden des Pakets nötig; die PNG-Symbolkonvertierung erfolgt auf GitHub.
+
+Falls erforderlich:
+
+```bash
+sudo apt update
+sudo apt install -y mono-complete libgdiplus ffmpeg curl unzip
+```
+
+## Manuelle Installation
+
+TeddyBench vorher schließen. Von der Release-Seite diese beiden Assets herunterladen, nicht die automatisch erzeugten Source-code-Archive:
+
+- `TeddyBench-Linux-1.7.0-linux.3.zip`
+- `TeddyBench-Linux-1.7.0-linux.3.zip.sha256`
+
+Beide Dateien nach Downloads speichern und prüfen:
 
 ```bash
 cd ~/Downloads
-sha256sum -c TeddyBench-Linux-1.7.0-linux.2.zip.sha256
+sha256sum -c TeddyBench-Linux-1.7.0-linux.3.zip.sha256
 ```
 
-Continue only if verification reports OK:
+Nur bei OK fortfahren:
 
 ```bash
 TESTDIR=$(mktemp -d "$HOME/Downloads/teddybench-install.XXXXXX")
-unzip TeddyBench-Linux-1.7.0-linux.2.zip -d "$TESTDIR"
+unzip TeddyBench-Linux-1.7.0-linux.3.zip -d "$TESTDIR"
 cd "$TESTDIR/TeddyBench-Linux"
 sudo bash ./install-linux.sh
 ```
 
-Then search for TeddyBench in the Linux Mint application menu. Launch the application as your normal user, not with sudo. You can add the menu entry to your favorites.
+Der Installer ersetzt die Programmdateien unter `/opt/teddybench` und erstellt `/usr/share/applications/teddybench.desktop`. Original-dog.ico und vorab erzeugtes PNG sind enthalten. Den Installer immer aus dem frisch entpackten Ordner starten, niemals aus `/opt/teddybench` selbst. Vor Updates eigene Konfigurationen sichern.
 
-The installer copies the application to `/opt/teddybench` and creates `/usr/share/applications/teddybench.desktop`. The original `dog.ico` and a PNG generated during packaging are included. ImageMagick is not required on the user's machine.
+## Direkt im Terminal installieren
 
-Run the installer from the freshly extracted directory, never from `/opt/teddybench` itself. The installer does not install runtime dependencies. This is the Mono-based Linux version, not Avalonia; the .NET SDK is not required for this prebuilt package. A compatible Mono runtime and libgdiplus must already be available.
-
-### Install directly from the terminal
-
-No browser download or manual extraction is necessary. Requires Bash, curl, unzip and sha256sum. On Mint, install missing download tools with:
-
-```bash
-sudo apt update
-sudo apt install -y curl unzip
-```
-
-Copy the complete block below. It downloads the fixed release version, verifies its checksum, extracts it in a temporary directory and runs the installer. Only the installation step uses sudo. Download or verification failure stops the process before installation. Temporary files are removed on exit.
+Der folgende vollständige Bash-Block lädt und prüft das ZIP, entpackt es temporär und startet erst danach den Installer. Bei einem Fehler wird abgebrochen. Die temporären Dateien werden anschließend entfernt. Voraussetzungen wie Mono werden nicht automatisch installiert.
 
 ```bash
 (
   set -euo pipefail
-  VERSION="1.7.0-linux.2"
+  VERSION="1.7.0-linux.3"
   ARCHIVE="TeddyBench-Linux-${VERSION}.zip"
   BASE_URL="https://github.com/basecore/teddy/releases/download/v${VERSION}"
   INSTALL_TMP=$(mktemp -d)
@@ -69,26 +96,54 @@ Copy the complete block below. It downloads the fixed release version, verifies 
 )
 ```
 
-### One-line installation
+### Dieselbe Installation als Einzeiler
 
-The same procedure as one line, for a Bash terminal:
+In einem Bash-Terminal ausführen, nachdem TeddyBench geschlossen wurde:
 
 ```bash
-(set -euo pipefail; VERSION=1.7.0-linux.2; ARCHIVE="TeddyBench-Linux-${VERSION}.zip"; BASE_URL="https://github.com/basecore/teddy/releases/download/v${VERSION}"; INSTALL_TMP=$(mktemp -d); trap 'rm -rf "$INSTALL_TMP"' EXIT; cd "$INSTALL_TMP"; curl -fL --retry 3 -o "$ARCHIVE" "$BASE_URL/$ARCHIVE"; curl -fL --retry 3 -o "$ARCHIVE.sha256" "$BASE_URL/$ARCHIVE.sha256"; sha256sum -c "$ARCHIVE.sha256"; unzip -q "$ARCHIVE"; cd TeddyBench-Linux; sudo bash ./install-linux.sh)
+(set -euo pipefail; VERSION=1.7.0-linux.3; ARCHIVE="TeddyBench-Linux-${VERSION}.zip"; BASE_URL="https://github.com/basecore/teddy/releases/download/v${VERSION}"; INSTALL_TMP=$(mktemp -d); trap 'rm -rf "$INSTALL_TMP"' EXIT; cd "$INSTALL_TMP"; curl -fL --retry 3 -o "$ARCHIVE" "$BASE_URL/$ARCHIVE"; curl -fL --retry 3 -o "$ARCHIVE.sha256" "$BASE_URL/$ARCHIVE.sha256"; sha256sum -c "$ARCHIVE.sha256"; unzip -q "$ARCHIVE"; cd TeddyBench-Linux; sudo bash ./install-linux.sh)
 ```
 
-Both terminal methods still download the release ZIP automatically. They require the release assets to have been published; HTTP 404 means the version or asset is unavailable. They do not install missing Mono dependencies.
+Nur vertrauenswürdige Releases installieren. Eine Prüfsumme aus demselben Release prüft Konsistenz, ist aber keine unabhängige digitale Signatur. Wer das Skript vorab prüfen möchte, verwendet die manuelle Installation. HTTP 404 bedeutet, dass Version oder Asset noch nicht verfügbar sind.
 
-Security: run an installer only if you trust this repository and release. A checksum downloaded from the same release checks consistency but is not an independent digital signature. For inspection before installation, use the manual download method and read `install-linux.sh` before running it.
+## Starten und entfernen
 
-### Uninstall
+Im Mint-Menü nach TeddyBench suchen und bei Bedarf zu Favoriten hinzufügen. Die Anwendung als normaler Benutzer starten, nicht mit sudo. Alternativ:
+
+```bash
+/opt/teddybench/TeddyBench
+```
+
+Deinstallation:
 
 ```bash
 sudo bash /opt/teddybench/uninstall-linux.sh
 ```
 
-This removes the application installation and its system menu entry.
+Das entfernt Programmordner und systemweiten Menüeintrag, nicht die separat gespeicherten CONTENT-Dateien.
 
-### Actions artifacts versus releases
+## Releases, Testbuilds und Workflows
 
-Actions artifact downloads may wrap the application ZIP in another ZIP. A direct release-asset download contains `TeddyBench-Linux` after a single extraction.
+- `Build TeddyBench for Linux`: aktueller Quellcode-Build für Tests.
+- `Release tested TeddyBench Linux build`: paketiert das erfolgreiche Artifact des festgelegten ac86aa2-Commits als linux.3; kein Neubuild und kein Überschreiben bestehender Releases.
+- Andere ältere Release-/Packaging-Workflows sind nicht automatisch der aktuelle Veröffentlichungsweg.
+
+Actions-Artifact-Downloads können ein äußeres ZIP um das eigentliche Paket legen. Direkt heruntergeladene Release-ZIPs enthalten nach einmaligem Entpacken den Programmordner. Für Tests immer Artifact und Commit prüfen; der Menüeintrag startet dagegen die installierte Version unter /opt.
+
+## Roadmap: schrittweise verbessern
+
+Die folgenden Punkte sind geplant beziehungsweise zu prüfen, nicht bereits implementiert und ohne zugesagten Termin:
+
+1. Getestete Basis bewahren: Installer-Releases mit nachvollziehbarem Commit und Prüfsummen; Wiedergabe, Stoppen, Dialoge und Export vor jedem Release erneut testen.
+2. Menüs und Oberfläche vereinheitlichen: Beschriftungen, Abstände, Buttonhöhen, Farben und Tastaturbedienung konsistent gestalten; Sortierung, Wiedergabe und Dateiaktionen sauber gruppieren. Vertraute TeddyBench-Struktur und funktionierende Textdarstellung erhalten.
+3. Windows-spezifische Aufrufe erfassen und einzeln ersetzen: Dateimanager-/Browseraufrufe, Pfade, Laufwerkserkennung, Einstellungen, Aktualisierung und Audiopfade prüfen. Wo sinnvoll native Linux-Schnittstellen oder plattformübergreifende Bibliotheken einsetzen; Windows-Verhalten getrennt halten.
+4. Audio weiter verbessern: Stoppen und Fehlerbehandlung absichern, Abhängigkeiten dokumentieren, Positionssuche und Zeitdarstellung gesondert entwickeln und testen. NAudio nur dort entfernen, wo Ersatz und Tests vorhanden sind.
+5. Linux-Dateiablage verbessern: Einstellungen und Cache in benutzerspezifische Verzeichnisse verlagern; Schreibrechte und Updates robuster behandeln.
+6. Leistung messen: Cover-/Metadaten-Caching, Hintergrundoperationen und große Bibliotheken untersuchen. Keine pauschalen Geschwindigkeitsversprechen ohne Messung.
+7. Hardware separat validieren: NFC- und Firmwarefunktionen nur mit geeigneter Hardware und klaren Warnungen testen.
+
+Ein einzelner Linux-kompatibler Funktionsersatz macht die gesamte GUI noch nicht nativ. Ein vollständiger Toolkit-Wechsel ist derzeit nicht Teil dieses Plans. Kleine, einzeln testbare Änderungen haben Vorrang vor einem erneuten kompletten GUI-Neubau.
+
+## Fehler melden
+
+Bitte Linux-/Mint-Version, Release beziehungsweise Commit, genaue Fehlermeldung, Startweg (Menü oder Testordner) und Schritte zur Reproduktion nennen. Logs vor dem Hochladen auf persönliche Informationen prüfen. Private CONTENT-Dateien nicht ungefragt veröffentlichen. Vor schreibenden oder Hardwareaktionen eigene Sicherungen anlegen.
